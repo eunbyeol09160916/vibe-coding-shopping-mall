@@ -5,16 +5,25 @@
 // 환경 변수를 여러 방법으로 시도
 const getApiBaseUrl = () => {
   // 1. import.meta.env에서 직접 가져오기 (Vite 기본 방식)
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && envUrl !== 'undefined' && !envUrl.includes('localhost')) {
+    console.log('✅ Using VITE_API_BASE_URL from env:', envUrl);
+    return envUrl;
   }
   
   // 2. window 객체에서 가져오기 (런타임 주입용)
   if (typeof window !== 'undefined' && window.__API_BASE_URL__) {
+    console.log('✅ Using API_BASE_URL from window:', window.__API_BASE_URL__);
     return window.__API_BASE_URL__;
   }
   
-  // 3. 기본값 (개발 환경)
+  // 3. 프로덕션 환경에서는 localhost 사용 금지
+  if (import.meta.env.MODE === 'production' || import.meta.env.PROD) {
+    console.error('❌ ERROR: VITE_API_BASE_URL is not set in production!');
+    console.error('❌ Please set VITE_API_BASE_URL in Vercel environment variables!');
+  }
+  
+  // 4. 기본값 (개발 환경)
   return "http://localhost:5000";
 };
 
