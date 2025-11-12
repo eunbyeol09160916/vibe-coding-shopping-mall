@@ -6,49 +6,24 @@ const connectDB = require('./config/database');
 const app = express();
 
 // Middleware
-// CORS 설정: CLIENT_URL 환경 변수 사용, Vercel 도메인 모두 허용
+// CORS 설정: 모든 origin 허용 (임시 디버깅용)
 const corsOptions = {
-  origin: function (origin, callback) {
-    // origin이 없으면 허용 (같은 도메인 요청, 모바일 앱 등)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
-    // CLIENT_URL이 설정되어 있으면 확인
-    if (process.env.CLIENT_URL) {
-      // 정확한 URL 매칭
-      if (origin === process.env.CLIENT_URL) {
-        console.log('✅ CORS 허용 (정확한 URL):', origin);
-        return callback(null, true);
-      }
-      
-      // Vercel 도메인 패턴 매칭 (*.vercel.app)
-      if (origin.includes('.vercel.app')) {
-        console.log('✅ CORS 허용 (Vercel 도메인):', origin);
-        return callback(null, true);
-      }
-    }
-    
-    // 개발 환경에서는 모든 origin 허용
-    if (process.env.NODE_ENV !== 'production') {
-      return callback(null, true);
-    }
-    
-    // 프로덕션에서 CLIENT_URL이 없으면 모든 origin 허용 (임시)
-    if (!process.env.CLIENT_URL) {
-      console.warn('⚠️ CLIENT_URL이 설정되지 않아 모든 origin을 허용합니다.');
-      return callback(null, true);
-    }
-    
-    // 그 외의 경우 차단
-    console.error('❌ CORS 차단:', origin);
-    console.error('✅ 허용된 CLIENT_URL:', process.env.CLIENT_URL);
-    callback(new Error('CORS policy: Origin not allowed'));
-  },
+  origin: true, // 모든 origin 허용
   credentials: true,
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
+
+// CORS 디버깅 로그
+app.use((req, res, next) => {
+  console.log('📡 요청 정보:', {
+    method: req.method,
+    path: req.path,
+    origin: req.headers.origin,
+    referer: req.headers.referer
+  });
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
