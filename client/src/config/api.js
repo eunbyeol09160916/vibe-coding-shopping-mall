@@ -3,14 +3,20 @@
 // 개발 환경에서는 localhost 사용
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-// 디버깅: 프로덕션 환경에서만 로그 출력
-if (import.meta.env.MODE === 'production' || import.meta.env.PROD) {
-  console.log('🔗 API Configuration:', {
-    API_BASE_URL,
-    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-    MODE: import.meta.env.MODE,
-    PROD: import.meta.env.PROD
-  });
+// 디버깅: 항상 로그 출력
+console.log('🔗 API Configuration:', {
+  API_BASE_URL,
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  MODE: import.meta.env.MODE,
+  PROD: import.meta.env.PROD,
+  allEnv: import.meta.env
+});
+
+// 프로덕션 환경에서 localhost를 사용하면 경고
+if ((import.meta.env.MODE === 'production' || import.meta.env.PROD) && API_BASE_URL.includes('localhost')) {
+  console.error('⚠️ WARNING: Using localhost in production!');
+  console.error('⚠️ Please set VITE_API_BASE_URL environment variable in Vercel!');
+  console.error('⚠️ Current API_BASE_URL:', API_BASE_URL);
 }
 
 // API 엔드포인트
