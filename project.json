@@ -1,0 +1,11 @@
+{
+  "name": "shopping-mall",
+  "description": "Shopping Mall Application",
+  "repository": "https://github.com/your-username/your-repo",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
+
