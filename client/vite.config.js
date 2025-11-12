@@ -18,10 +18,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true
-  },
-  // 환경 변수를 명시적으로 정의하여 Vercel에서 제대로 주입되도록 함
-  define: {
-    'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'http://localhost:5000')
   }
 })
 
