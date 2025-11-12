@@ -6,48 +6,43 @@ const connectDB = require('./config/database');
 const app = express();
 
 // Middleware
-// CORS 설정: 프로덕션에서는 CLIENT_URL 환경 변수 사용, 개발 환경에서는 모든 origin 허용
-const allowedOrigins = [];
-
-// CLIENT_URL이 있으면 추가
-if (process.env.CLIENT_URL) {
-  allowedOrigins.push(process.env.CLIENT_URL);
-  // Vercel URL 패턴도 허용 (서브도메인 포함)
-  const vercelUrl = process.env.CLIENT_URL;
-  if (vercelUrl.includes('vercel.app')) {
-    // *.vercel.app 패턴 허용
-    allowedOrigins.push(/^https:\/\/.*\.vercel\.app$/);
-  }
-}
-
+// CORS 설정: CLIENT_URL 환경 변수 사용, Vercel 도메인 모두 허용
 const corsOptions = {
   origin: function (origin, callback) {
-    // 개발 환경이거나 origin이 없으면 허용 (같은 도메인 요청)
-    if (!origin || process.env.NODE_ENV !== 'production') {
+    // origin이 없으면 허용 (같은 도메인 요청, 모바일 앱 등)
+    if (!origin) {
       return callback(null, true);
     }
     
-    // 허용된 origin 목록 확인
-    if (allowedOrigins.length === 0) {
-      // CLIENT_URL이 설정되지 않았으면 모든 origin 허용 (임시)
-      console.warn('⚠️ CLIENT_URL이 설정되지 않아 모든 origin을 허용합니다.');
-      return callback(null, true);
-    }
-    
-    // 정확한 URL 매칭
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    // 정규식 패턴 매칭 (Vercel 서브도메인 등)
-    for (const pattern of allowedOrigins) {
-      if (pattern instanceof RegExp && pattern.test(origin)) {
+    // CLIENT_URL이 설정되어 있으면 확인
+    if (process.env.CLIENT_URL) {
+      // 정확한 URL 매칭
+      if (origin === process.env.CLIENT_URL) {
+        console.log('✅ CORS 허용 (정확한 URL):', origin);
+        return callback(null, true);
+      }
+      
+      // Vercel 도메인 패턴 매칭 (*.vercel.app)
+      if (origin.includes('.vercel.app')) {
+        console.log('✅ CORS 허용 (Vercel 도메인):', origin);
         return callback(null, true);
       }
     }
     
+    // 개발 환경에서는 모든 origin 허용
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // 프로덕션에서 CLIENT_URL이 없으면 모든 origin 허용 (임시)
+    if (!process.env.CLIENT_URL) {
+      console.warn('⚠️ CLIENT_URL이 설정되지 않아 모든 origin을 허용합니다.');
+      return callback(null, true);
+    }
+    
+    // 그 외의 경우 차단
     console.error('❌ CORS 차단:', origin);
-    console.error('✅ 허용된 origin:', allowedOrigins);
+    console.error('✅ 허용된 CLIENT_URL:', process.env.CLIENT_URL);
     callback(new Error('CORS policy: Origin not allowed'));
   },
   credentials: true,
