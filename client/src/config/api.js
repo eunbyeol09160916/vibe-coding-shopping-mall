@@ -1,7 +1,24 @@
 // API 서버 주소 설정
 // Vercel 환경 변수에서 가져오기 (VITE_ 접두사 필요)
 // 개발 환경에서는 localhost 사용
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+// 환경 변수를 여러 방법으로 시도
+const getApiBaseUrl = () => {
+  // 1. import.meta.env에서 직접 가져오기 (Vite 기본 방식)
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // 2. window 객체에서 가져오기 (런타임 주입용)
+  if (typeof window !== 'undefined' && window.__API_BASE_URL__) {
+    return window.__API_BASE_URL__;
+  }
+  
+  // 3. 기본값 (개발 환경)
+  return "http://localhost:5000";
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 // 디버깅: 항상 로그 출력
 console.log('🔗 API Configuration:', {
