@@ -94,8 +94,11 @@ function MainPage() {
         return;
       }
 
+      const userUrl = `${API_ENDPOINTS.USERS}/me`;
+      console.log('👤 Fetching user info from:', userUrl);
+
       try {
-        const response = await fetch(`${API_ENDPOINTS.USERS}/me`, {
+        const response = await fetch(userUrl, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -103,15 +106,24 @@ function MainPage() {
           },
         });
 
+        console.log('👤 User response status:', response.status, response.statusText);
         const data = await response.json();
+        console.log('👤 User response data:', data);
 
         if (response.ok && data.success) {
           setUser(data.data);
+          console.log('👤 User loaded successfully');
         } else {
+          console.error('👤 User API error:', data.message);
           clearAuthData();
         }
       } catch (error) {
-        console.error("유저 정보 가져오기 오류:", error);
+        console.error("👤 유저 정보 가져오기 오류:", error);
+        console.error("👤 Error details:", {
+          message: error.message,
+          stack: error.stack,
+          url: userUrl
+        });
         clearAuthData();
       }
     };
@@ -124,18 +136,31 @@ function MainPage() {
       setIsLoadingProducts(true);
       setProductError("");
 
+      const productsUrl = `${API_ENDPOINTS.PRODUCTS}?page=1&limit=100`;
+      console.log('📦 Fetching products from:', productsUrl);
+
       try {
-        const response = await fetch(`${API_ENDPOINTS.PRODUCTS}?page=1&limit=100`);
+        const response = await fetch(productsUrl);
+        console.log('📦 Products response status:', response.status, response.statusText);
+        
         const data = await response.json();
+        console.log('📦 Products response data:', data);
 
         if (response.ok && data.success) {
           const fetchedProducts = Array.isArray(data.data) ? data.data : [];
           setProducts(fetchedProducts);
+          console.log('📦 Products loaded successfully:', fetchedProducts.length);
         } else {
+          console.error('📦 Products API error:', data.message);
           setProductError(data.message || "상품 정보를 불러오지 못했습니다.");
         }
       } catch (error) {
-        console.error("상품 정보 가져오기 오류:", error);
+        console.error("📦 상품 정보 가져오기 오류:", error);
+        console.error("📦 Error details:", {
+          message: error.message,
+          stack: error.stack,
+          url: productsUrl
+        });
         setProductError("상품 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
       } finally {
         setIsLoadingProducts(false);
