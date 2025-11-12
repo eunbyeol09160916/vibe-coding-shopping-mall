@@ -17,13 +17,26 @@ const getApiBaseUrl = () => {
     return window.__API_BASE_URL__;
   }
   
-  // 3. 프로덕션 환경에서는 localhost 사용 금지
+  // 3. 프로덕션 환경에서 자동 감지
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // Vercel 도메인에서 실행 중이면 Heroku URL 사용
+    if (hostname.includes('vercel.app') || hostname.includes('vercel.com')) {
+      // Heroku URL (임시 해결책 - 나중에 Vercel 환경 변수로 교체 권장)
+      const herokuUrl = 'https://vibecoding-shoppingmall-454a9153ae83.herokuapp.com';
+      console.warn('⚠️ VITE_API_BASE_URL이 설정되지 않아 기본 Heroku URL을 사용합니다.');
+      console.warn('⚠️ Vercel에서 VITE_API_BASE_URL 환경 변수를 설정해주세요.');
+      return herokuUrl;
+    }
+  }
+  
+  // 4. 프로덕션 환경에서는 localhost 사용 금지
   if (import.meta.env.MODE === 'production' || import.meta.env.PROD) {
     console.error('❌ ERROR: VITE_API_BASE_URL is not set in production!');
     console.error('❌ Please set VITE_API_BASE_URL in Vercel environment variables!');
   }
   
-  // 4. 기본값 (개발 환경)
+  // 5. 기본값 (개발 환경)
   return "http://localhost:5000";
 };
 
