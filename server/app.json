@@ -1,0 +1,12 @@
+{
+  "name": "Shopping Mall API",
+  "description": "Shopping Mall Backend API",
+  "repository": "https://github.com/your-username/your-repo",
+  "keywords": ["node", "express", "mongodb"],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
+
