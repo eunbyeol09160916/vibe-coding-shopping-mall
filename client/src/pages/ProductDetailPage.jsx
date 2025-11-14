@@ -112,9 +112,46 @@ function ProductDetailPage() {
     }
   };
 
-  const handleBuyNow = () => {
-    // TODO: 바로구매 로직
-    alert("바로구매 기능은 준비 중입니다.");
+  const handleBuyNow = async () => {
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+
+    if (!product || !product._id) {
+      alert("상품 정보를 불러올 수 없습니다.");
+      return;
+    }
+
+    try {
+      // 장바구니에 상품 추가
+      const response = await fetch(`${API_ENDPOINTS.CART}/items`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: quantity,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // 장바구니에 추가 후 바로 주문 페이지로 이동
+        navigate("/checkout");
+      } else {
+        alert(data.message || "장바구니에 상품을 추가하는데 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("바로구매 오류:", error);
+      alert("바로구매 처리에 실패했습니다.");
+    }
   };
 
   const handleLogout = () => {
