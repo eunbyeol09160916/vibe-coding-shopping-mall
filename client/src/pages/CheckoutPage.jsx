@@ -50,12 +50,24 @@ function CheckoutPage() {
         return;
       }
 
+      // 저장된 폼 데이터 복원
+      const savedFormData = localStorage.getItem('checkoutFormData');
+      if (savedFormData) {
+        try {
+          const parsed = JSON.parse(savedFormData);
+          setFormData(parsed);
+        } catch (e) {
+          console.error("폼 데이터 복원 실패:", e);
+        }
+      }
+
       if (success === 'true' && impUid) {
         // 결제 성공
         setSubmitting(true);
         handleMobilePaymentSuccess(impUid, merchantUid, token);
       } else {
         // 결제 실패 - 주문 실패 페이지로 이동
+        localStorage.removeItem('checkoutFormData'); // 저장된 폼 데이터 삭제
         navigate(`/order/failure?error=${encodeURIComponent(errorMsg || "결제에 실패했습니다.")}`, { replace: true });
       }
     }
@@ -64,6 +76,40 @@ function CheckoutPage() {
   // 모바일 결제 성공 처리
   const handleMobilePaymentSuccess = async (impUid, merchantUid, token) => {
     try {
+      // 저장된 폼 데이터 가져오기
+      const savedFormData = localStorage.getItem('checkoutFormData');
+      let orderFormData = formData;
+      
+      if (savedFormData) {
+        try {
+          orderFormData = JSON.parse(savedFormData);
+        } catch (e) {
+          console.error("폼 데이터 파싱 실패:", e);
+        }
+      }
+
+      // 폼 데이터 재검증
+      if (!orderFormData.shippingAddress || !orderFormData.shippingAddress.trim()) {
+        alert("배송지 정보가 없습니다. 주문 페이지로 돌아갑니다.");
+        localStorage.removeItem('checkoutFormData');
+        navigate("/checkout", { replace: true });
+        return;
+      }
+
+      if (!orderFormData.recipientName || !orderFormData.recipientName.trim()) {
+        alert("수령인 이름이 없습니다. 주문 페이지로 돌아갑니다.");
+        localStorage.removeItem('checkoutFormData');
+        navigate("/checkout", { replace: true });
+        return;
+      }
+
+      if (!orderFormData.recipientPhone || !orderFormData.recipientPhone.trim()) {
+        alert("수령인 연락처가 없습니다. 주문 페이지로 돌아갑니다.");
+        localStorage.removeItem('checkoutFormData');
+        navigate("/checkout", { replace: true });
+        return;
+      }
+
       // 주문 생성 API 호출
       const response = await fetch(API_ENDPOINTS.ORDERS, {
         method: "POST",
@@ -72,7 +118,7 @@ function CheckoutPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...formData,
+          ...orderFormData,
           merchantUid: merchantUid,
           impUid: impUid,
         }),
@@ -81,16 +127,19 @@ function CheckoutPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // 주문 성공 페이지로 이동
+        // 주문 성공 - 저장된 폼 데이터 삭제
+        localStorage.removeItem('checkoutFormData');
         navigate(`/order/success?success=true&orderId=${data.data._id}`, { replace: true });
       } else {
         // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
+        localStorage.removeItem('checkoutFormData');
         alert(`결제는 완료되었지만 주문 생성에 실패했습니다.\n\n에러: ${data.message || "주문 처리에 실패했습니다."}\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.`);
         // 주문 목록 페이지로 이동하여 결제 내역 확인 가능하도록
         navigate("/orders", { replace: true });
       }
     } catch (error) {
       console.error("주문 처리 오류:", error);
+      localStorage.removeItem('checkoutFormData');
       // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
       alert("결제는 완료되었지만 주문 생성 중 오류가 발생했습니다.\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.");
       navigate("/orders", { replace: true });
@@ -195,19 +244,30 @@ function CheckoutPage() {
       return;
     }
 
-    // 폼 검증
-    if (!formData.shippingAddress.trim()) {
+    // 엄격한 폼 검증 (결제 전 필수)
+    const shippingAddress = formData.shippingAddress?.trim() || '';
+    const recipientName = formData.recipientName?.trim() || '';
+    const recipientPhone = formData.recipientPhone?.trim() || '';
+
+    if (!shippingAddress) {
       setError("배송지를 입력해주세요.");
       return;
     }
 
-    if (!formData.recipientName.trim()) {
+    if (!recipientName) {
       setError("수령인 이름을 입력해주세요.");
       return;
     }
 
-    if (!formData.recipientPhone.trim()) {
+    if (!recipientPhone) {
       setError("수령인 연락처를 입력해주세요.");
+      return;
+    }
+
+    // 연락처 형식 검증 (선택사항)
+    const phoneRegex = /^[0-9-]+$/;
+    if (!phoneRegex.test(recipientPhone)) {
+      setError("올바른 연락처 형식을 입력해주세요. (숫자와 하이픈만 사용 가능)");
       return;
     }
 
@@ -217,7 +277,18 @@ function CheckoutPage() {
     }
 
     const cartItems = cart?.cart?.items || [];
+    if (cartItems.length === 0) {
+      setError("장바구니가 비어있습니다.");
+      navigate("/cart");
+      return;
+    }
+
     const totalAmount = cart?.totalAmount || 0;
+    if (totalAmount <= 0) {
+      setError("주문할 상품이 없습니다.");
+      return;
+    }
+
     // 배송비 계산 (30,000원 이상 무료, 미만 1원)
     const shippingFee = totalAmount >= 30000 ? 0 : 1;
     const finalTotal = totalAmount + shippingFee;
@@ -225,16 +296,24 @@ function CheckoutPage() {
     // 주문번호 생성 (임시)
     const merchantUid = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // 포트원 결제 요청
-    if (!window.IMP) {
-      setError("결제 모듈을 불러올 수 없습니다. 페이지를 새로고침해주세요.");
-      return;
-    }
-
     // 주문명 생성
     const orderName = cartItems.length === 1
       ? cartItems[0].product.name
       : `${cartItems[0].product.name} 외 ${cartItems.length - 1}개`;
+
+    // 검증된 폼 데이터를 정리하여 저장 (모바일 리디렉션 대비)
+    const validatedFormData = {
+      shippingAddress: shippingAddress,
+      recipientName: recipientName,
+      recipientPhone: recipientPhone,
+      notes: formData.notes?.trim() || '',
+    };
+    
+    // 결제 전에 검증된 폼 데이터를 localStorage에 저장
+    localStorage.setItem('checkoutFormData', JSON.stringify(validatedFormData));
+    
+    // formData도 업데이트 (일관성 유지)
+    setFormData(validatedFormData);
 
     // IMP.request_pay 호출
     // 포트원 V1 + 이니시스 구모듈(html5_inicis) 채널 사용
@@ -246,9 +325,9 @@ function CheckoutPage() {
         name: orderName,
         amount: finalTotal,
         buyer_email: user?.email || '',
-        buyer_name: formData.recipientName,
-        buyer_tel: formData.recipientPhone,
-        buyer_addr: formData.shippingAddress,
+        buyer_name: validatedFormData.recipientName,
+        buyer_tel: validatedFormData.recipientPhone,
+        buyer_addr: validatedFormData.shippingAddress,
         buyer_postcode: '',
         m_redirect_url: window.location.origin + '/checkout', // 모바일에서 결제 완료 후 리디렉션 될 URL
       },
@@ -257,6 +336,27 @@ function CheckoutPage() {
           // 결제 성공
           setSubmitting(true);
           try {
+            // 저장된 검증된 폼 데이터 가져오기 (안전성을 위해)
+            const savedFormData = localStorage.getItem('checkoutFormData');
+            let orderFormData = validatedFormData;
+            
+            if (savedFormData) {
+              try {
+                orderFormData = JSON.parse(savedFormData);
+              } catch (e) {
+                console.error("폼 데이터 파싱 실패:", e);
+                // 파싱 실패 시 validatedFormData 사용
+              }
+            }
+
+            // 최종 검증 (이중 체크)
+            if (!orderFormData.shippingAddress || !orderFormData.recipientName || !orderFormData.recipientPhone) {
+              alert("배송지 정보가 없습니다. 주문 페이지로 돌아갑니다.");
+              localStorage.removeItem('checkoutFormData');
+              navigate("/checkout");
+              return;
+            }
+
             const response = await fetch(API_ENDPOINTS.ORDERS, {
               method: "POST",
               headers: {
@@ -264,7 +364,10 @@ function CheckoutPage() {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                ...formData,
+                shippingAddress: orderFormData.shippingAddress,
+                recipientName: orderFormData.recipientName,
+                recipientPhone: orderFormData.recipientPhone,
+                notes: orderFormData.notes || '',
                 merchantUid: rsp.merchant_uid,
                 impUid: rsp.imp_uid,
               }),
@@ -273,21 +376,26 @@ function CheckoutPage() {
             const data = await response.json();
 
             if (response.ok && data.success) {
-              // 주문 성공 페이지로 이동
+              // 주문 성공 - 저장된 폼 데이터 삭제
+              localStorage.removeItem('checkoutFormData');
               navigate(`/order/success?success=true&orderId=${data.data._id}`);
             } else {
               // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
+              localStorage.removeItem('checkoutFormData');
               alert(`결제는 완료되었지만 주문 생성에 실패했습니다.\n\n에러: ${data.message || "주문 처리에 실패했습니다."}\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.`);
               // 주문 목록 페이지로 이동하여 결제 내역 확인 가능하도록
               navigate("/orders");
             }
           } catch (error) {
             console.error("주문 처리 오류:", error);
+            localStorage.removeItem('checkoutFormData');
             // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
             alert("결제는 완료되었지만 주문 생성 중 오류가 발생했습니다.\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.");
             navigate("/orders");
           }
         } else {
+          // 결제 실패 - 저장된 폼 데이터 삭제
+          localStorage.removeItem('checkoutFormData');
           // 결제 실패 - 주문 실패 페이지로 이동
           navigate(`/order/failure?error=${encodeURIComponent(rsp.error_msg || "결제에 실패했습니다.")}`);
         }
