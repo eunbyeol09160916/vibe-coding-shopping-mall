@@ -362,24 +362,6 @@ function ProductDetailPage() {
           min-height: 100vh;
           background-color: #fff;
         }
-        /* Top Banner */
-        .top-banner {
-          background-color: #dc3545;
-          color: white;
-          padding: 10px 20px;
-          text-align: center;
-          position: relative;
-          font-size: 14px;
-        }
-        .top-banner-close {
-          position: absolute;
-          right: 20px;
-          top: 50%;
-          transform: translateY(-50%);
-          cursor: pointer;
-          font-size: 18px;
-          font-weight: bold;
-        }
         /* Header Banner */
         .header-banner {
           background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
@@ -410,45 +392,6 @@ function ProductDetailPage() {
           font-weight: bold;
           color: white;
           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        /* Sub Navigation */
-        .sub-nav {
-          background-color: #fff;
-          border-bottom: 1px solid #e0e0e0;
-          padding: 0 20px;
-        }
-        .sub-nav-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          padding: 12px 0;
-        }
-        .all-menu-btn {
-          background-color: #ffd700;
-          color: #333;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 5px;
-          font-weight: 600;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .sub-nav-links {
-          display: flex;
-          gap: 20px;
-        }
-        .sub-nav-link {
-          color: #333;
-          text-decoration: none;
-          font-size: 14px;
-          cursor: pointer;
-        }
-        .sub-nav-link:hover {
-          color: #ff69b4;
         }
         /* Product Section */
         .product-section {
@@ -825,31 +768,9 @@ function ProductDetailPage() {
       <div className="product-detail-page">
         <Navbar user={user} onLogout={handleLogout} />
 
-        {/* Top Banner */}
-        <div className="top-banner">
-          위니비니몰 신규회원 가입 시 포인트 1,000원 지급
-          <span className="top-banner-close">×</span>
-        </div>
-
         {/* Header Banner */}
         <div className="header-banner">
           <div className="header-banner-text">JELLY & GUMMY</div>
-        </div>
-
-        {/* Sub Navigation */}
-        <div className="sub-nav">
-          <div className="sub-nav-container">
-            <button className="all-menu-btn">
-              ☰ 전체메뉴
-            </button>
-            <div className="sub-nav-links">
-              <a className="sub-nav-link" onClick={() => navigate("/")}>홈</a>
-              <a className="sub-nav-link">베스트</a>
-              <a className="sub-nav-link">신상품</a>
-              <a className="sub-nav-link">이벤트</a>
-              <a className="sub-nav-link">VIP ZONE</a>
-            </div>
-          </div>
         </div>
 
         {/* Product Section */}
