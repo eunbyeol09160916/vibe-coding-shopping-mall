@@ -317,6 +317,76 @@ function MainPage() {
           text-align: center;
           margin-top: 60px;
         }
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .hero-section {
+            padding: 40px 16px;
+          }
+          .hero-title {
+            font-size: 28px;
+            margin-bottom: 12px;
+            line-height: 1.3;
+          }
+          .hero-subtitle {
+            font-size: 16px;
+          }
+          .product-section {
+            padding: 40px 16px;
+          }
+          .section-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+          }
+          .product-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+          }
+          .product-grid.special-grid {
+            gap: 16px;
+          }
+          .product-grid.special-grid .product-card {
+            max-width: 100%;
+            flex: 1 1 calc(50% - 8px);
+            min-width: 150px;
+          }
+          .product-image {
+            height: 180px;
+            font-size: 36px;
+          }
+          .product-info {
+            padding: 16px;
+          }
+          .product-name {
+            font-size: 16px;
+            margin-bottom: 8px;
+          }
+          .product-price {
+            font-size: 18px;
+          }
+          .product-price-original {
+            font-size: 14px;
+          }
+          .footer {
+            padding: 30px 16px;
+            margin-top: 40px;
+            font-size: 14px;
+          }
+        }
+        @media (max-width: 480px) {
+          .hero-title {
+            font-size: 24px;
+          }
+          .hero-subtitle {
+            font-size: 14px;
+          }
+          .product-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          .product-grid.special-grid .product-card {
+            flex: 1 1 100%;
+          }
+        }
       `}</style>
       <div className="main-page">
         <Navbar user={user} onLogout={handleLogout} />

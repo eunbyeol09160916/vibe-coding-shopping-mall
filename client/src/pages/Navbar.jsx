@@ -243,6 +243,73 @@ function Navbar({ user, onLogout }) {
           font-weight: bold;
           border: 2px solid #ffb6c1;
         }
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .navbar {
+            padding: 10px 0;
+          }
+          .navbar-container {
+            padding: 0 12px;
+          }
+          .navbar-brand {
+            font-size: 18px;
+          }
+          .navbar-center {
+            margin: 0 12px;
+          }
+          .search-bar {
+            padding: 8px 16px;
+            font-size: 13px;
+            max-width: 100%;
+          }
+          .navbar-right {
+            gap: 8px;
+          }
+          .nav-button {
+            padding: 6px 12px;
+            font-size: 12px;
+            white-space: nowrap;
+          }
+          .user-welcome-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+          }
+          .welcome-text {
+            font-size: 12px;
+            display: none;
+          }
+          .welcome-text strong {
+            display: inline;
+          }
+          .cart-icon-button {
+            width: 38px;
+            height: 38px;
+          }
+          .cart-icon {
+            width: 20px;
+            height: 20px;
+          }
+        }
+        @media (max-width: 480px) {
+          .navbar-brand {
+            font-size: 16px;
+          }
+          .navbar-center {
+            margin: 0 8px;
+          }
+          .search-bar {
+            padding: 6px 12px;
+            font-size: 12px;
+          }
+          .nav-button {
+            padding: 5px 10px;
+            font-size: 11px;
+          }
+          .user-welcome-btn {
+            padding: 5px 8px;
+            font-size: 11px;
+          }
+        }
       `}</style>
       <nav className="navbar">
         <div className="navbar-container">

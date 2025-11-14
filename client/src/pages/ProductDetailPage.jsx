@@ -801,6 +801,189 @@ function ProductDetailPage() {
           font-weight: 600;
           color: #333;
         }
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .header-banner {
+            padding: 30px 16px;
+          }
+          .header-banner-text {
+            font-size: 24px;
+          }
+          .product-section {
+            padding: 20px 16px;
+          }
+          .product-container {
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-bottom: 40px;
+          }
+          .product-image {
+            height: 350px;
+            font-size: 80px;
+          }
+          .product-name {
+            font-size: 24px;
+          }
+          .product-description {
+            font-size: 14px;
+          }
+          .product-price-main {
+            font-size: 28px;
+          }
+          .product-price-label {
+            font-size: 13px;
+          }
+          .quantity-selector {
+            gap: 12px;
+            margin: 16px 0;
+          }
+          .quantity-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+          }
+          .quantity-input {
+            width: 70px;
+            height: 36px;
+            font-size: 14px;
+          }
+          .total-price {
+            font-size: 18px;
+            margin: 16px 0;
+          }
+          .action-buttons {
+            flex-direction: column;
+            gap: 8px;
+          }
+          .btn-wishlist {
+            width: 100%;
+            height: 45px;
+          }
+          .btn-cart,
+          .btn-buy-now {
+            height: 45px;
+            font-size: 15px;
+          }
+          .tabs-list {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+          }
+          .tab {
+            padding: 12px 20px;
+            font-size: 14px;
+            white-space: nowrap;
+          }
+          .tab-content {
+            padding: 30px 16px;
+          }
+          .brand-section {
+            padding: 24px 16px;
+          }
+          .brand-icons {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+          }
+          .brand-icon {
+            font-size: 32px;
+          }
+          .brand-text {
+            font-size: 14px;
+            margin-bottom: 16px;
+          }
+          .brand-search {
+            flex-direction: column;
+          }
+          .brand-search-input {
+            width: 100%;
+          }
+          .warning-section {
+            padding: 12px 16px;
+            margin-bottom: 30px;
+          }
+          .warning-text {
+            font-size: 13px;
+          }
+          .pattern-section {
+            padding: 40px 16px;
+            margin: 30px 0;
+          }
+          .product-feature-title {
+            font-size: 32px;
+            margin-bottom: 16px;
+          }
+          .product-feature-subtitle {
+            font-size: 20px;
+            margin-bottom: 20px;
+          }
+          .product-feature-text {
+            font-size: 16px;
+            margin-bottom: 16px;
+          }
+          .checkpoint-section {
+            padding: 24px 16px;
+          }
+          .checkpoint-title {
+            font-size: 20px;
+            margin-bottom: 16px;
+          }
+          .checkpoint-hashtags {
+            gap: 8px;
+            margin-bottom: 20px;
+          }
+          .hashtag {
+            font-size: 13px;
+          }
+          .checkpoint-icons {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+          }
+          .checkpoint-icon-circle {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+          }
+          .checkpoint-icon-label {
+            font-size: 12px;
+          }
+          .checkpoint-large-icons {
+            gap: 20px;
+            flex-wrap: wrap;
+          }
+          .checkpoint-large-icon-circle {
+            width: 100px;
+            height: 100px;
+            font-size: 40px;
+          }
+          .checkpoint-large-icon-label {
+            font-size: 14px;
+          }
+        }
+        @media (max-width: 480px) {
+          .header-banner-text {
+            font-size: 20px;
+          }
+          .product-name {
+            font-size: 20px;
+          }
+          .product-price-main {
+            font-size: 24px;
+          }
+          .product-feature-title {
+            font-size: 28px;
+          }
+          .product-feature-subtitle {
+            font-size: 18px;
+          }
+          .checkpoint-icons {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .checkpoint-large-icons {
+            flex-direction: column;
+            align-items: center;
+          }
+        }
       `}</style>
       <div className="product-detail-page">
         <Navbar user={user} onLogout={handleLogout} />
