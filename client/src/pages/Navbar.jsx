@@ -265,12 +265,20 @@ function Navbar({ user, onLogout }) {
           </div>
           <div className="navbar-right">
             {!user ? (
-              <button
-                className="nav-button"
-                onClick={() => navigate("/login")}
-              >
-                로그인
-              </button>
+              <>
+                <button
+                  className="nav-button"
+                  onClick={() => navigate("/login")}
+                >
+                  로그인
+                </button>
+                <button
+                  className="nav-button"
+                  onClick={() => navigate("/register")}
+                >
+                  회원가입
+                </button>
+              </>
             ) : (
               <>
                 <div className="user-welcome-container">

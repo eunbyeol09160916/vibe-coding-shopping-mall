@@ -134,21 +134,53 @@ function RegisterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("회원가입이 완료되었습니다!");
-        // 폼 초기화
-        setFormData({
-          name: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-        });
-        setAgreements({
-          all: false,
-          terms: false,
-          privacy: false,
-          marketing: false,
-        });
-        navigate("/");
+        // 회원가입 성공 후 자동 로그인
+        try {
+          const loginResponse = await fetch(`${API_ENDPOINTS.USERS}/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: formData.email.trim(),
+              password: formData.password,
+            }),
+          });
+
+          const loginData = await loginResponse.json();
+
+          if (loginResponse.ok && loginData.success) {
+            // JWT 토큰 저장
+            if (loginData.data && loginData.data.token) {
+              localStorage.setItem("token", loginData.data.token);
+              localStorage.setItem("user", JSON.stringify(loginData.data.user));
+            }
+            alert("회원가입이 완료되었습니다! 자동으로 로그인되었습니다.");
+            // 폼 초기화
+            setFormData({
+              name: "",
+              email: "",
+              password: "",
+              confirmPassword: "",
+            });
+            setAgreements({
+              all: false,
+              terms: false,
+              privacy: false,
+              marketing: false,
+            });
+            // 메인 페이지로 이동 (새로고침하여 Navbar 업데이트)
+            window.location.href = "/";
+          } else {
+            // 로그인 실패 시 회원가입은 성공했지만 로그인은 실패
+            alert("회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
+            navigate("/login");
+          }
+        } catch (loginError) {
+          console.error("자동 로그인 오류:", loginError);
+          alert("회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
+          navigate("/login");
+        }
       } else {
         // 서버에서 보낸 에러 메시지 표시
         alert(data.message || "회원가입에 실패했습니다.");
