@@ -37,6 +37,11 @@ function CheckoutPage() {
 
   // 모바일 결제 완료 후 리디렉션 처리
   useEffect(() => {
+    // 주문 성공 페이지로 이미 이동한 경우에는 실행하지 않음
+    if (window.location.pathname.includes('/order/success')) {
+      return;
+    }
+
     const impUid = searchParams.get('imp_uid');
     const merchantUid = searchParams.get('merchant_uid');
     const success = searchParams.get('imp_success');
@@ -199,6 +204,11 @@ function CheckoutPage() {
       const token = localStorage.getItem("token");
       if (!token) return;
 
+      // 주문 성공 페이지로 이동한 경우에는 장바구니를 가져오지 않음 (자동 리디렉션 방지)
+      if (window.location.pathname.includes('/order/success')) {
+        return;
+      }
+
       setLoading(true);
       setError("");
 
@@ -215,6 +225,10 @@ function CheckoutPage() {
 
         if (response.ok && data.success) {
           if (!data.data.cart || data.data.cart.items.length === 0) {
+            // 주문 성공 페이지로 이동한 경우에는 자동 리디렉션하지 않음
+            if (window.location.pathname.includes('/order/success')) {
+              return;
+            }
             setError("장바구니가 비어있습니다.");
             setTimeout(() => navigate("/cart"), 2000);
             return;
