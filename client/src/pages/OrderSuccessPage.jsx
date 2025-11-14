@@ -213,6 +213,98 @@ function OrderSuccessPage() {
           font-size: 18px;
           color: #666;
         }
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+          .order-success-container {
+            padding: 20px 16px;
+          }
+          .success-card,
+          .error-card {
+            padding: 30px 20px;
+          }
+          .success-icon,
+          .error-icon {
+            font-size: 60px;
+            margin-bottom: 16px;
+          }
+          .success-title,
+          .error-title {
+            font-size: 24px;
+            margin-bottom: 8px;
+          }
+          .success-message,
+          .error-message {
+            font-size: 16px;
+            margin-bottom: 24px;
+            line-height: 1.6;
+          }
+          .order-info {
+            padding: 16px;
+            margin: 24px 0;
+          }
+          .order-info-row {
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e0e0e0;
+          }
+          .order-info-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+          }
+          .order-info-label {
+            font-size: 14px;
+            margin-bottom: 4px;
+          }
+          .order-info-value {
+            font-size: 16px;
+            font-weight: 600;
+            word-break: break-word;
+          }
+          .action-buttons {
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 24px;
+          }
+          .btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+          }
+          .loading-message {
+            padding: 30px 20px;
+            font-size: 16px;
+          }
+        }
+        @media (max-width: 480px) {
+          .success-card,
+          .error-card {
+            padding: 24px 16px;
+          }
+          .success-icon,
+          .error-icon {
+            font-size: 50px;
+          }
+          .success-title,
+          .error-title {
+            font-size: 20px;
+          }
+          .success-message,
+          .error-message {
+            font-size: 14px;
+          }
+          .order-info {
+            padding: 12px;
+          }
+          .order-info-label {
+            font-size: 13px;
+          }
+          .order-info-value {
+            font-size: 15px;
+          }
+        }
       `}</style>
       <div className="order-success-page">
         <Navbar user={user} onLogout={handleLogout} />
