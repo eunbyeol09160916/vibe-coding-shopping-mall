@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middlewares/auth');
 const {
+  validateOrder,
   createOrder,
   getUserOrders,
   getOrderById,
@@ -12,6 +13,9 @@ const {
 
 // 모든 주문 라우트는 인증이 필요함
 router.use(authenticateToken);
+
+// 주문 가능 여부 검증 (결제 전) (POST /api/orders/validate)
+router.post('/validate', validateOrder);
 
 // 주문 생성 (POST /api/orders)
 router.post('/', createOrder);

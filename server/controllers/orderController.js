@@ -38,10 +38,12 @@ const verifyPayment = async (impUid, expectedAmount) => {
       };
     }
 
-    if (payment.amount !== expectedAmount) {
+    // 금액 비교 (1원 차이는 허용 - 반올림 오차 대비)
+    const amountDiff = Math.abs(payment.amount - expectedAmount);
+    if (amountDiff > 1) {
       return {
         isValid: false,
-        message: `결제 금액이 일치하지 않습니다. (결제: ${payment.amount}, 예상: ${expectedAmount})`
+        message: `결제 금액이 일치하지 않습니다. (결제: ${payment.amount}원, 예상: ${expectedAmount}원, 차이: ${amountDiff}원)`
       };
     }
 
@@ -51,12 +53,34 @@ const verifyPayment = async (impUid, expectedAmount) => {
     };
   } catch (error) {
     console.error('결제 검증 오류:', error);
+    console.error('에러 상세:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      impUid: impUid,
+      expectedAmount: expectedAmount
+    });
+    
     // 포트원 API 오류 시에도 주문은 진행할 수 있도록 (개발 환경)
     // 운영 환경에서는 실제 검증 필요
     if (process.env.NODE_ENV === 'production') {
+      // IMP_SECRET이 없거나 잘못된 경우
+      if (error.response?.status === 401 || error.message?.includes('401')) {
+        return {
+          isValid: false,
+          message: '결제 검증에 실패했습니다. (포트원 인증 오류 - IMP_SECRET 확인 필요)'
+        };
+      }
+      // 포트원 API 서버 오류
+      if (error.response?.status >= 500) {
+        return {
+          isValid: false,
+          message: '결제 검증에 실패했습니다. (포트원 API 서버 오류)'
+        };
+      }
       return {
         isValid: false,
-        message: '결제 검증에 실패했습니다.'
+        message: `결제 검증에 실패했습니다. (${error.message || '알 수 없는 오류'})`
       };
     }
     // 개발 환경에서는 검증 실패해도 통과 (실제 포트원 키가 없을 수 있음)
@@ -68,11 +92,95 @@ const verifyPayment = async (impUid, expectedAmount) => {
   }
 };
 
+// 주문 가능 여부 검증 (결제 전)
+const validateOrder = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { shippingAddress, recipientName, recipientPhone } = req.body;
+
+    // 필수 필드 검증
+    if (!shippingAddress || !recipientName || !recipientPhone) {
+      return res.status(400).json({
+        success: false,
+        message: '배송지 정보를 모두 입력해주세요.',
+        valid: false
+      });
+    }
+
+    // 장바구니 조회
+    const cart = await Cart.findOne({ user: userId })
+      .populate('items.product', 'name price image sku category');
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '장바구니가 비어있습니다.',
+        valid: false
+      });
+    }
+
+    // 주문 아이템 생성 및 총 금액 계산
+    const orderItems = [];
+    let totalAmount = 0;
+
+    for (const cartItem of cart.items) {
+      if (!cartItem.product) {
+        return res.status(400).json({
+          success: false,
+          message: '장바구니에 존재하지 않는 상품이 있습니다.',
+          valid: false
+        });
+      }
+
+      const itemTotal = cartItem.product.price * cartItem.quantity;
+      totalAmount += itemTotal;
+
+      orderItems.push({
+        product: cartItem.product._id,
+        quantity: cartItem.quantity,
+        price: cartItem.product.price
+      });
+    }
+
+    if (orderItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '주문할 상품이 없습니다.',
+        valid: false
+      });
+    }
+
+    // 배송비 계산 (30,000원 이상 무료)
+    const shippingFee = totalAmount >= 30000 ? 0 : 1;
+    const finalTotal = totalAmount + shippingFee;
+
+    // 검증 성공
+    return res.status(200).json({
+      success: true,
+      message: '주문이 가능합니다.',
+      valid: true,
+      data: {
+        totalAmount: totalAmount,
+        shippingFee: shippingFee,
+        finalTotal: finalTotal,
+        itemCount: orderItems.length
+      }
+    });
+  } catch (error) {
+    console.error('주문 검증 오류:', error);
+    return res.status(500).json({
+      success: false,
+      message: '주문 검증 중 오류가 발생했습니다.',
+      valid: false
+    });
+  }
+};
+
 // 주문 생성
 const createOrder = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { shippingAddress, recipientName, recipientPhone, notes, merchantUid, impUid } = req.body;
+    const { shippingAddress, recipientName, recipientPhone, notes, merchantUid, impUid, paidAmount } = req.body;
 
     // 필수 필드 검증
     if (!shippingAddress || !recipientName || !recipientPhone) {
@@ -146,8 +254,23 @@ const createOrder = async (req, res) => {
 
     // 결제 검증 (impUid가 있는 경우)
     if (impUid) {
+      // 클라이언트에서 전송한 결제 금액과 서버 계산 금액 비교
+      if (paidAmount && Math.abs(paidAmount - finalTotal) > 1) {
+        console.warn('결제 금액 불일치:', {
+          paidAmount: paidAmount,
+          calculatedAmount: finalTotal,
+          diff: Math.abs(paidAmount - finalTotal)
+        });
+      }
+      
       const verification = await verifyPayment(impUid, finalTotal);
       if (!verification.isValid) {
+        console.error('결제 검증 실패:', {
+          impUid: impUid,
+          expectedAmount: finalTotal,
+          paidAmount: paidAmount,
+          message: verification.message
+        });
         return res.status(400).json({
           success: false,
           message: verification.message || '결제 검증에 실패했습니다.'
@@ -395,6 +518,7 @@ const getAllOrders = async (req, res) => {
 };
 
 module.exports = {
+  validateOrder,
   createOrder,
   getUserOrders,
   getOrderById,

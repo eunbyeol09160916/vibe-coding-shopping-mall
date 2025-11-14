@@ -41,6 +41,7 @@ function CheckoutPage() {
     const merchantUid = searchParams.get('merchant_uid');
     const success = searchParams.get('imp_success');
     const errorMsg = searchParams.get('error_msg');
+    const paidAmount = searchParams.get('paid_amount'); // 모바일에서 결제 금액 가져오기
 
     // 모바일에서 결제 완료 후 리디렉션된 경우
     if (impUid && merchantUid) {
@@ -61,20 +62,25 @@ function CheckoutPage() {
         }
       }
 
+      // 저장된 결제 금액 가져오기 (URL 파라미터에 없을 경우 대비)
+      const savedPaidAmount = localStorage.getItem('checkoutPaidAmount');
+      const finalPaidAmount = paidAmount ? parseInt(paidAmount) : (savedPaidAmount ? parseInt(savedPaidAmount) : null);
+
       if (success === 'true' && impUid) {
         // 결제 성공
         setSubmitting(true);
-        handleMobilePaymentSuccess(impUid, merchantUid, token);
+        handleMobilePaymentSuccess(impUid, merchantUid, token, finalPaidAmount);
       } else {
-        // 결제 실패 - 주문 실패 페이지로 이동
-        localStorage.removeItem('checkoutFormData'); // 저장된 폼 데이터 삭제
+        // 결제 실패 - 저장된 폼 데이터와 결제 금액 삭제
+        localStorage.removeItem('checkoutFormData');
+        localStorage.removeItem('checkoutPaidAmount');
         navigate(`/order/failure?error=${encodeURIComponent(errorMsg || "결제에 실패했습니다.")}`, { replace: true });
       }
     }
   }, [searchParams]);
 
   // 모바일 결제 성공 처리
-  const handleMobilePaymentSuccess = async (impUid, merchantUid, token) => {
+  const handleMobilePaymentSuccess = async (impUid, merchantUid, token, paidAmount = null) => {
     try {
       // 저장된 폼 데이터 가져오기
       const savedFormData = localStorage.getItem('checkoutFormData');
@@ -121,18 +127,21 @@ function CheckoutPage() {
           ...orderFormData,
           merchantUid: merchantUid,
           impUid: impUid,
+          paidAmount: paidAmount, // 모바일에서 결제한 금액 전송 (있는 경우)
         }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // 주문 성공 - 저장된 폼 데이터 삭제
+        // 주문 성공 - 저장된 폼 데이터와 결제 금액 삭제
         localStorage.removeItem('checkoutFormData');
+        localStorage.removeItem('checkoutPaidAmount');
         navigate(`/order/success?success=true&orderId=${data.data._id}`, { replace: true });
       } else {
         // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
         localStorage.removeItem('checkoutFormData');
+        localStorage.removeItem('checkoutPaidAmount');
         alert(`결제는 완료되었지만 주문 생성에 실패했습니다.\n\n에러: ${data.message || "주문 처리에 실패했습니다."}\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.`);
         // 주문 목록 페이지로 이동하여 결제 내역 확인 가능하도록
         navigate("/orders", { replace: true });
@@ -140,6 +149,7 @@ function CheckoutPage() {
     } catch (error) {
       console.error("주문 처리 오류:", error);
       localStorage.removeItem('checkoutFormData');
+      localStorage.removeItem('checkoutPaidAmount');
       // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
       alert("결제는 완료되었지만 주문 생성 중 오류가 발생했습니다.\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.");
       navigate("/orders", { replace: true });
@@ -309,21 +319,48 @@ function CheckoutPage() {
       notes: formData.notes?.trim() || '',
     };
     
-    // 결제 전에 검증된 폼 데이터를 localStorage에 저장
-    localStorage.setItem('checkoutFormData', JSON.stringify(validatedFormData));
-    
-    // formData도 업데이트 (일관성 유지)
-    setFormData(validatedFormData);
+    // 결제 전에 서버에서 주문 가능 여부 검증
+    try {
+      const validateResponse = await fetch(`${API_ENDPOINTS.ORDERS}/validate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          shippingAddress: shippingAddress,
+          recipientName: recipientName,
+          recipientPhone: recipientPhone,
+        }),
+      });
 
-    // IMP.request_pay 호출
-    // 포트원 V1 + 이니시스 구모듈(html5_inicis) 채널 사용
-    window.IMP.request_pay(
+      const validateData = await validateResponse.json();
+
+      if (!validateResponse.ok || !validateData.success || !validateData.valid) {
+        // 검증 실패 - 결제 진행 안함
+        setError(validateData.message || "주문 검증에 실패했습니다. 결제를 진행할 수 없습니다.");
+        return;
+      }
+
+      // 검증 성공 - 서버에서 계산한 최종 금액 사용
+      const serverFinalTotal = validateData.data?.finalTotal || finalTotal;
+      
+      // 결제 전에 검증된 폼 데이터와 결제 금액을 localStorage에 저장 (모바일 리디렉션 대비)
+      localStorage.setItem('checkoutFormData', JSON.stringify(validatedFormData));
+      localStorage.setItem('checkoutPaidAmount', serverFinalTotal.toString()); // 서버에서 계산한 금액 저장
+      
+      // formData도 업데이트 (일관성 유지)
+      setFormData(validatedFormData);
+
+      // IMP.request_pay 호출 (서버에서 검증한 금액 사용)
+      // 포트원 V1 + 이니시스 구모듈(html5_inicis) 채널 사용
+      window.IMP.request_pay(
       {
         pg: 'html5_inicis', // 이니시스 구모듈
         pay_method: 'card',
         merchant_uid: merchantUid, // 상점에서 관리하는 주문 번호
         name: orderName,
-        amount: finalTotal,
+        amount: serverFinalTotal, // 서버에서 검증한 금액 사용
         buyer_email: user?.email || '',
         buyer_name: validatedFormData.recipientName,
         buyer_tel: validatedFormData.recipientPhone,
@@ -370,18 +407,21 @@ function CheckoutPage() {
                 notes: orderFormData.notes || '',
                 merchantUid: rsp.merchant_uid,
                 impUid: rsp.imp_uid,
+                paidAmount: rsp.paid_amount || serverFinalTotal, // 결제한 실제 금액 전송
               }),
             });
 
             const data = await response.json();
 
             if (response.ok && data.success) {
-              // 주문 성공 - 저장된 폼 데이터 삭제
+              // 주문 성공 - 저장된 폼 데이터와 결제 금액 삭제
               localStorage.removeItem('checkoutFormData');
+              localStorage.removeItem('checkoutPaidAmount');
               navigate(`/order/success?success=true&orderId=${data.data._id}`);
             } else {
               // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
               localStorage.removeItem('checkoutFormData');
+              localStorage.removeItem('checkoutPaidAmount');
               alert(`결제는 완료되었지만 주문 생성에 실패했습니다.\n\n에러: ${data.message || "주문 처리에 실패했습니다."}\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.`);
               // 주문 목록 페이지로 이동하여 결제 내역 확인 가능하도록
               navigate("/orders");
@@ -389,18 +429,25 @@ function CheckoutPage() {
           } catch (error) {
             console.error("주문 처리 오류:", error);
             localStorage.removeItem('checkoutFormData');
+            localStorage.removeItem('checkoutPaidAmount');
             // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
             alert("결제는 완료되었지만 주문 생성 중 오류가 발생했습니다.\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.");
             navigate("/orders");
           }
         } else {
-          // 결제 실패 - 저장된 폼 데이터 삭제
+          // 결제 실패 - 저장된 폼 데이터와 결제 금액 삭제
           localStorage.removeItem('checkoutFormData');
+          localStorage.removeItem('checkoutPaidAmount');
           // 결제 실패 - 주문 실패 페이지로 이동
           navigate(`/order/failure?error=${encodeURIComponent(rsp.error_msg || "결제에 실패했습니다.")}`);
         }
       }
-    );
+      );
+    } catch (validationError) {
+      // 주문 검증 실패 - 결제 진행 안함
+      console.error("주문 검증 오류:", validationError);
+      setError("주문 검증 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
   };
 
   const handleLogout = () => {
