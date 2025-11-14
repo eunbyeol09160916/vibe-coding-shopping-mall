@@ -173,12 +173,12 @@ function OrderFailurePage() {
             </div>
 
             <div className="failure-details">
-              <div className="failure-details-title">다음과 같은 경우 주문이 실패할 수 있습니다:</div>
+              <div className="failure-details-title">결제가 실패한 경우 다음과 같은 이유가 있을 수 있습니다:</div>
               <div className="failure-details-text">
                 • 결제 정보가 올바르지 않은 경우<br />
+                • 카드 한도 초과 또는 잔액 부족<br />
                 • 네트워크 연결 문제가 발생한 경우<br />
-                • 서버 오류가 발생한 경우<br />
-                • 중복 주문이 감지된 경우<br />
+                • 결제 서버 오류가 발생한 경우<br />
                 • 결제 검증에 실패한 경우
               </div>
             </div>

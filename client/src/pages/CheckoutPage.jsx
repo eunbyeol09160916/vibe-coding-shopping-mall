@@ -84,13 +84,16 @@ function CheckoutPage() {
         // 주문 성공 페이지로 이동
         navigate(`/order/success?success=true&orderId=${data.data._id}`, { replace: true });
       } else {
-        // 주문 실패 페이지로 이동
-        navigate(`/order/failure?error=${encodeURIComponent(data.message || "주문 처리에 실패했습니다.")}`, { replace: true });
+        // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
+        alert(`결제는 완료되었지만 주문 생성에 실패했습니다.\n\n에러: ${data.message || "주문 처리에 실패했습니다."}\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.`);
+        // 주문 목록 페이지로 이동하여 결제 내역 확인 가능하도록
+        navigate("/orders", { replace: true });
       }
     } catch (error) {
       console.error("주문 처리 오류:", error);
-      // 주문 실패 페이지로 이동
-      navigate(`/order/failure?error=${encodeURIComponent("주문 처리에 실패했습니다.")}`, { replace: true });
+      // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
+      alert("결제는 완료되었지만 주문 생성 중 오류가 발생했습니다.\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.");
+      navigate("/orders", { replace: true });
     }
   };
 
@@ -273,13 +276,16 @@ function CheckoutPage() {
               // 주문 성공 페이지로 이동
               navigate(`/order/success?success=true&orderId=${data.data._id}`);
             } else {
-              // 주문 실패 페이지로 이동
-              navigate(`/order/failure?error=${encodeURIComponent(data.message || "주문 처리에 실패했습니다.")}`);
+              // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
+              alert(`결제는 완료되었지만 주문 생성에 실패했습니다.\n\n에러: ${data.message || "주문 처리에 실패했습니다."}\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.`);
+              // 주문 목록 페이지로 이동하여 결제 내역 확인 가능하도록
+              navigate("/orders");
             }
           } catch (error) {
             console.error("주문 처리 오류:", error);
-            // 주문 실패 페이지로 이동
-            navigate(`/order/failure?error=${encodeURIComponent("주문 처리에 실패했습니다.")}`);
+            // 결제는 성공했지만 주문 생성 실패 - 재시도 안내
+            alert("결제는 완료되었지만 주문 생성 중 오류가 발생했습니다.\n\n고객센터로 문의해주세요. 결제 내역은 확인 가능합니다.");
+            navigate("/orders");
           }
         } else {
           // 결제 실패 - 주문 실패 페이지로 이동
